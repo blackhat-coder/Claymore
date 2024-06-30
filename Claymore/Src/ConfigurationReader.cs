@@ -1,4 +1,5 @@
 ﻿using Claymore.Src.Models;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,7 +14,10 @@ public static class ConfigurationReader
 {
     private static string? _configFile;
     private static JsonConfig? _config;
+    private static ILogger _logger;
     public static JsonConfig? Config { get { return _config; } private set { } }
+    private static bool _initialized = false;
+
     public static string? ConfigFile { 
         get { 
             return _configFile; 
@@ -23,33 +27,48 @@ public static class ConfigurationReader
         } 
     }
 
-    public static JsonConfig? Read()
+    public static void Init(Action<ConfigurationReaderOptions> options)
     {
-        if(_configFile == null)
-            throw new ArgumentNullException("Couldn't find config file");
+        var readerOptions = new ConfigurationReaderOptions();
+        options(readerOptions);
 
-        JsonConfig config = new JsonConfig();
+        _configFile = readerOptions.file;
+        _logger = readerOptions.logger;
 
-        JsonSerializerOptions options = new JsonSerializerOptions();
-        options.Converters.Add(new JsonStringEnumConverter());
-
-        using (StreamReader reader = new StreamReader(_configFile))
-        {
-            string jsonConfig = reader.ReadToEnd();
-            config = JsonSerializer.Deserialize<JsonConfig>(jsonConfig, options);
-            _config = config;
-        }
-        
-        return config;
+        _initialized = true;
     }
 
-    public static JsonConfig? Read(ConfigurationReaderOptions options)
+    public static JsonConfig? Read()
     {
-        if (string.IsNullOrEmpty(options.file))
-            throw new ArgumentNullException("");
+        try
+        {
+            if (!_initialized)
+            {
+                throw new InvalidOperationException("Plese call Init() to set neccessary configurations");
+            }
 
-        _configFile = options.file;
-        return Read();
+            if (_configFile == null)
+                throw new InvalidOperationException("Couldn't find config file");
+
+            JsonConfig config = new JsonConfig();
+
+            JsonSerializerOptions options = new JsonSerializerOptions();
+            options.Converters.Add(new JsonStringEnumConverter());
+
+            using (StreamReader reader = new StreamReader(_configFile))
+            {
+                string jsonConfig = reader.ReadToEnd();
+                config = JsonSerializer.Deserialize<JsonConfig>(jsonConfig, options);
+                _config = config;
+            }
+
+            _logger.LogInformation("Successfully read Config File");
+            return config;
+        }
+        catch (Exception ex)
+        {
+            throw new Exception("Exception while Reading Config File", ex);
+        }
     }
 
     public static int NumEndpoints()
@@ -72,4 +91,5 @@ public static class ConfigurationReader
 public class ConfigurationReaderOptions
 {
     public string file { get; set; }
+    public ILogger logger { get; set; }
 }
