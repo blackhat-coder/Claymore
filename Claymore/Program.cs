@@ -19,10 +19,9 @@ var httpClient = new HttpClient();
 string filename = "C:\\Users\\aboh.israel\\Documents\\Codes\\Claymore\\Claymore\\claymore.json";
 
 var logger = serviceProvider.GetRequiredService<ILogger<Program>>();
+var workers = serviceProvider.GetRequiredService<ClaymoreWorkers>();
 
 ConfigurationReader.Init(options => { options.file = filename; options.logger = logger; });
 var config = ConfigurationReader.Read();
-
-var workers = new ClaymoreWorkers(httpClient);
 
 await workers.Run();

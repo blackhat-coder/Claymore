@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Claymore.Src;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -14,6 +15,9 @@ public static class ServiceCollections
     public static IServiceCollection AddAppServices(this IServiceCollection services)
     {
         services.AddLogging(builder => builder.AddConsole());
+        services.AddHttpClient();
+
+        services.AddTransient<ClaymoreWorkers>();
 
         return services;
     }

@@ -1,8 +1,10 @@
 ﻿using Claymore.Src.Enums;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -12,16 +14,21 @@ public class ClaymoreWorkers
 {
     private readonly HttpClient _httpClient;
     private Stopwatch _stopWatch;
+    private ILogger<ClaymoreWorkers> _logger;
 
-    public ClaymoreWorkers(HttpClient httpClient)
+    public ClaymoreWorkers(ILogger<ClaymoreWorkers> logger, IHttpClientFactory httpClientFactory)
     {
-        _httpClient = httpClient;
-        _stopWatch = new Stopwatch();
+        _httpClient = httpClientFactory.CreateClient();
+        _logger = logger;
+        _stopWatch = Stopwatch.StartNew();
     }
+
     public async Task Run()
     {
         try
         {
+            _logger.LogInformation("Trying");
+
             var endpointsInfo = ConfigurationReader.Config.endpointsInfo;
 
             foreach(var endpointInfo in endpointsInfo)
@@ -37,8 +44,7 @@ public class ClaymoreWorkers
         }
         catch (Exception ex)
         {
-            // Console.WriteLine the error or write the error to the error output;
-            Console.WriteLine(ex.Message);
+            _logger.LogError(ex.Message);
         }
     }
 }
