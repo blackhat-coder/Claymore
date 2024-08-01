@@ -15,11 +15,13 @@ public class JsonConfig
 
 public class EndpointInfo
 {
+    public string name { get; set; }
     public string endpoint { get; set; }
     public int priority { get; set; }
     public HttpConfigMethod method { get; set; }
     public List<Header> headers { get; set; }
     public string payload { get; set; }
+    public List<string> dependsOn { get; set; }
 }
 
 public class Header

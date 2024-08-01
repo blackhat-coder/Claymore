@@ -1,13 +1,15 @@
 {
   "endpointsInfo": [
     {
+      "name": "weatherForecast",
       "endpoint": "https://localhost:44384/WeatherForecast",
       "priority": 1,
       "method": "GET",
       "headers": [
-        
+
       ],
-      "payload": ""
+      "payload": "",
+      "dependsOn": []
     }
   ]
 }
