@@ -20,11 +20,12 @@ public class EndpointInfo
     public int priority { get; set; }
     public HttpConfigMethod method { get; set; }
     public List<Header> headers { get; set; }
-    public string payload { get; set; }
+    public dynamic payload { get; set; }
     public List<string> dependsOn { get; set; }
 }
 
 public class Header
 {
     public string key { get; set; }
+    public string value { get; set; }
 }

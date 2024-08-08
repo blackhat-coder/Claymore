@@ -12,10 +12,29 @@ namespace Claymore.Src;
 
 public static class ConfigurationReader
 {
+    /// <summary>
+    /// 
+    /// </summary>
     private static string? _configFile;
+
+    /// <summary>
+    /// 
+    /// </summary>
     private static JsonConfig? _config;
+
+    /// <summary>
+    /// 
+    /// </summary>
     private static ILogger _logger;
+
+    /// <summary>
+    /// 
+    /// </summary>
     public static JsonConfig? Config { get { return _config; } private set { } }
+
+    /// <summary>
+    /// Set to True if ConfigurationReader has _configFile & _logger
+    /// </summary>
     private static bool _initialized = false;
 
     public static string? ConfigFile { 

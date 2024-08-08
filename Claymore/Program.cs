@@ -16,7 +16,8 @@ var services = serviceCollection.AddAppServices();
 var serviceProvider = services.BuildServiceProvider();
 
 var httpClient = new HttpClient();
-string filename = "C:\\Users\\aboh.israel\\Documents\\Codes\\Claymore\\Claymore\\claymore.json";
+//string filename = "C:\\Users\\aboh.israel\\Documents\\Codes\\Claymore\\Claymore\\claymore.json";
+string filename = "C:\\Users\\aboh.israel\\OneDrive\\Documents\\Codes\\Claymore\\Claymore\\claymore.json";
 
 var logger = serviceProvider.GetRequiredService<ILogger<Program>>();
 var workers = serviceProvider.GetRequiredService<ClaymoreWorkers>();
