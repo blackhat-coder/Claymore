@@ -96,6 +96,9 @@ public static class ConfigurationReader
                 _config = config;
             }
 
+            // Performs validation on the configuration
+            ValidateConfig();
+
             _logger?.LogInformation("Successfully read Config File");
             return config;
         }
@@ -128,6 +131,42 @@ public static class ConfigurationReader
             Read();
 
         return _config?.endpointsInfo.Select(e => e.endpoint).ToList() ?? Enumerable.Empty<string>();
+    }
+
+    /// <summary>
+    /// Validates the configuration to ensure that each dependency listed in the "dependsOn" field 
+    /// corresponds to an existing endpoint name.
+    /// </summary>
+    /// <exception cref="Exception">Thrown when a dependency references a non-existent endpoint name.</exception>
+    private static void ValidateConfig()
+    {
+        if (Config == null)
+            return;
+
+        List<string> names = _config.endpointsInfo.Select(e => e.name).ToList();
+
+        // Check distinct names
+        if(names.Distinct().Count() != names.Count)
+        {
+            string errorMessage = $"Duplicate name found";
+            _logger?.LogError(errorMessage);
+            throw new Exception(errorMessage);
+        }
+
+        // Check Depends On
+        foreach (var requestInfo in Config?.endpointsInfo)
+        {
+            foreach(var dependsOn in requestInfo.dependsOn)
+            {
+                if (!names.Contains(dependsOn))
+                {
+                    string errorMesage = $"Syntax Error ({_configFile}): {requestInfo.name} depends on: {dependsOn} Not Found.";
+                    _logger?.LogError(errorMesage);
+                    throw new Exception(errorMesage);
+                }
+            }
+        }
+
     }
 }
 

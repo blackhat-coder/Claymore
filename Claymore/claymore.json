@@ -1,11 +1,37 @@
 {
   "endpointsInfo": [
     {
-      "name": "weatherForecast",
+      "name": "weatherOne",
       "endpoint": "https://localhost:44384/WeatherForecast",
       "priority": 1,
       "method": "GET",
       "headers": [
+        {
+          "key": "",
+          "value": ""
+        },
+        {
+          "key": "",
+          "value": ""
+        }
+      ],
+      "payload": "",
+      "dependsOn": []
+    },
+    {
+      "name": "weatherTwo",
+      "endpoint": "https://localhost:44384/WeatherForecast",
+      "priority": 1,
+      "method": "GET",
+      "headers": [
+        {
+          "key": "",
+          "value": "${name}.ResponseBody.Bearer"
+        },
+        {
+          "key": "",
+          "value": ""
+        }
       ],
       "payload": "",
       "dependsOn": []
