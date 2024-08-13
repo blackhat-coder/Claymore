@@ -205,7 +205,7 @@ public class SyntaxValidator
             var part = match.Groups["part"].Value;
             var property = match.Groups["property"].Value;
 
-
+            return (name, part, property);
         }
 
         return null;
