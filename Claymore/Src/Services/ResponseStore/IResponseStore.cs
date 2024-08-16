@@ -16,7 +16,10 @@ namespace Claymore.Src.Services.ResponseStore
         /// <param name="id"></param>
         /// <param name="response"></param>
         /// <returns></returns>
-        Task StoreResponse(string id, object response);
-        Task StoreResponse(string id, string response);
+        Task StoreResponseAsync(string id, string headers, object response);
+        Task StoreResponseAsync(string id, string headers, string response);
+        Task<string> GetAsync(string id);
+        Task<string> GetResponseHeaderAsync(string id);
+        Task<string> GetResponseBodyAsync(string id);
     }
 }
