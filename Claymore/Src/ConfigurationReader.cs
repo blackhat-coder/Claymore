@@ -186,28 +186,3 @@ public class ConfigurationReaderOptions
     /// </summary>
     public ILogger logger { get; set; }
 }
-
-public class SyntaxValidator
-{
-    private static readonly Regex pattern = new Regex(@"\$(?<name>[a-zA-Z0-9_]+)\.(?<part>ResponseBody|ResponseHeader)\.(?<property>[a-zA-Z0-9_]+)");
-
-    public bool ValidateSyntax(string input)
-    {
-        return pattern.IsMatch(input);
-    }
-
-    public (string name, string part, string property)? ParseSyntax(string input)
-    {
-        var match = pattern.Match(input);
-        if (match.Success)
-        {
-            var name = match.Groups["name"].Value;
-            var part = match.Groups["part"].Value;
-            var property = match.Groups["property"].Value;
-
-            return (name, part, property);
-        }
-
-        return null;
-    }
-}

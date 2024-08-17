@@ -42,26 +42,36 @@ public class ClaymoreWorkers
             {
                 if (endpointInfo.method == HttpConfigMethod.GET)
                 {
-                    _stopWatch.Start();
+                    var resolver = new ClaymoreSyntaxResolver(_responseStore);
+                    await _httpClient.AddRequestHeaders(resolver, endpointInfo.headers);
 
-                    _httpClient.AddRequestHeaders(endpointInfo.headers);
+                    _stopWatch.Start();
 
                     var response = await _httpClient.GetAsync(endpointInfo.endpoint);
                     _stopWatch.Stop();
+
                     var respContent = await response.Content.ReadAsStringAsync();
-                    await _responseStore.StoreResponse($"{Thread.CurrentThread.ManagedThreadId}_{endpointInfo.name}", respContent);
+                    await _responseStore.StoreResponseAsync($"{Thread.CurrentThread.ManagedThreadId}_{endpointInfo.name}", response.Headers.ToJsonString(), respContent);
                 }
                 
                 if (endpointInfo.method == HttpConfigMethod.POST)
                 {
+                    var resolver = new ClaymoreSyntaxResolver(_responseStore);
+                    
+                    string stringPayload = Convert.ToString(endpointInfo.payload);
+                    string payload = (await resolver.FindAndReplace(stringPayload)) ?? "";
+                    StringContent content = new StringContent(payload, Encoding.UTF8, "application/json");
+
+                    await _httpClient.AddRequestHeaders(resolver, endpointInfo.headers);
+
                     _stopWatch.Start();
-                    // we want to check the payload data
-                    HttpContent content = endpointInfo.payload;
+                    
                     var response = await _httpClient.PostAsync(endpointInfo.endpoint, content);
-                    var respContent = await response.Content.ReadAsStringAsync();
 
                     _stopWatch.Stop();
-                    await _responseStore.StoreResponse($"{Thread.CurrentThread.ManagedThreadId}_{endpointInfo.name}", respContent);
+
+                    var respContent = await response.Content.ReadAsStringAsync();
+                    await _responseStore.StoreResponseAsync($"{Thread.CurrentThread.ManagedThreadId}_{endpointInfo.name}", response.Headers.ToJsonString(), respContent);
                 }
             }
         }
