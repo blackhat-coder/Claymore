@@ -9,7 +9,7 @@ namespace Claymore.Src.Helpers;
 
 public static class RegexPatterns
 {
-    // REPLACEMENT TOKENS
+    /// REPLACEMENT TOKENS
 
     /// <summary>
     /// Matches a placeholder with format: $name.ResponseBody.property or $name.ResponseHeader.property
@@ -18,7 +18,7 @@ public static class RegexPatterns
     public static Regex ReplacementPattern { get { return _replacementPattern; } }
 
 
-    // GENERATION TOKENS
+    /// GENERATION TOKENS
 
     /// <summary>
     /// Matches a boolean token placeholder: $bool
