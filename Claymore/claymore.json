@@ -22,7 +22,7 @@
         }
       ],
       "payload": "{\"summary\":\"fromClaymore\"}",
-      "dependsOn": []
+      "dependsOn": ["weatherOne"]
     }
   ]
 }
