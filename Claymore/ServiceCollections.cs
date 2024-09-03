@@ -1,5 +1,6 @@
 ﻿using Claymore.Src;
 using Claymore.Src.Services.ResponseStore;
+using Claymore.Src.Services.TextGeneration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System;
@@ -19,6 +20,7 @@ public static class ServiceCollections
         services.AddHttpClient();
 
         services.AddTransient<IResponseStore, FileResponseStore>();
+        services.AddScoped<IDataGenerator, DataGenerator>();
         services.AddTransient<ClaymoreWorkers>();
 
         return services;
