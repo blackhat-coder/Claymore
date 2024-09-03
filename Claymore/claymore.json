@@ -8,7 +8,8 @@
       "headers": [
       ],
       "payload": "",
-      "dependsOn": []
+      "dependsOn": [
+      ]
     },
     {
       "name": "weatherTwo",
@@ -21,8 +22,13 @@
           "value": "Bearer $weatherOne.ResponseBody.token"
         }
       ],
-      "payload": "{\"summary\":\"fromClaymore\"}",
-      "dependsOn": ["weatherOne"]
+      "payload": "{\"summary\":\"Composing Email:$email, Number:$number[3], Name:$name, String:$string[5]\"}",
+      "dependsOn": [
+        {
+          "name": "weatherOne",
+          "condition": "success"
+        }
+      ]
     }
   ]
 }
