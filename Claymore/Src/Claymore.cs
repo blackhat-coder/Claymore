@@ -2,6 +2,7 @@
 using Claymore.Src.Helpers;
 using Claymore.Src.Models;
 using Claymore.Src.Services.ResponseStore;
+using Claymore.Src.Services.TextGeneration;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -20,13 +21,15 @@ public class ClaymoreWorkers
     private Stopwatch _stopWatch;
     private ILogger<ClaymoreWorkers> _logger;
     private IResponseStore _responseStore;
+    private IDataGenerator _dataGenerator;
 
-    public ClaymoreWorkers(ILogger<ClaymoreWorkers> logger, IHttpClientFactory httpClientFactory, IResponseStore responseStore)
+    public ClaymoreWorkers(ILogger<ClaymoreWorkers> logger, IHttpClientFactory httpClientFactory, IResponseStore responseStore, IDataGenerator dataGenerator)
     {
         _httpClient = httpClientFactory.CreateClient();
         _logger = logger;
         _responseStore = responseStore;
         _stopWatch = Stopwatch.StartNew();
+        _dataGenerator = dataGenerator;
     }
 
     public async Task Run()
@@ -42,7 +45,7 @@ public class ClaymoreWorkers
             {
                 if (endpointInfo.method == HttpConfigMethod.GET)
                 {
-                    var resolver = new ClaymoreSyntaxResolver(_responseStore);
+                    var resolver = new ClaymoreSyntaxResolver(_responseStore, _dataGenerator);
                     await _httpClient.AddRequestHeaders(resolver, endpointInfo.headers);
 
                     _stopWatch.Start();
@@ -56,7 +59,7 @@ public class ClaymoreWorkers
                 
                 if (endpointInfo.method == HttpConfigMethod.POST)
                 {
-                    var resolver = new ClaymoreSyntaxResolver(_responseStore);
+                    var resolver = new ClaymoreSyntaxResolver(_responseStore, _dataGenerator);
                     
                     string stringPayload = Convert.ToString(endpointInfo.payload);
                     string payload = (await resolver.FindAndReplace(stringPayload)) ?? "";

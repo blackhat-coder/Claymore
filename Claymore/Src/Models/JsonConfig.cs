@@ -21,7 +21,13 @@ public class EndpointInfo
     public HttpConfigMethod method { get; set; }
     public List<Header> headers { get; set; }
     public dynamic payload { get; set; }
-    public List<string> dependsOn { get; set; }
+    public List<DependsOn> dependsOn { get; set; }
+}
+
+public class DependsOn
+{
+    public string name { get; set; }
+    public string condition { get; set; }
 }
 
 public class Header

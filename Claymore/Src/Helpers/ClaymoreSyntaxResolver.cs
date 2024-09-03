@@ -1,12 +1,18 @@
 ﻿using Claymore.Src.Enums;
 using Claymore.Src.Services.ResponseStore;
+using Claymore.Src.Services.TextGeneration;
+using Claymore.Src.Utils;
+using Microsoft.Extensions.Logging.Abstractions;
 using Newtonsoft.Json.Linq;
 using System.Text.RegularExpressions;
 
 namespace Claymore.Src.Helpers;
 
-public class ClaymoreSyntaxResolver(IResponseStore _responseStore)
+public class ClaymoreSyntaxResolver(IResponseStore _responseStore, IDataGenerator _dataGenerator)
 {
+
+    private readonly SyntaxValidator _syntaxValidator = new SyntaxValidator();
+
     /// <summary>
     /// Takes the input string, checks for a valid syntax, and replaces the placeholder with
     /// the corresponding value from the stored response
@@ -15,47 +21,63 @@ public class ClaymoreSyntaxResolver(IResponseStore _responseStore)
     /// <returns>The modified string with the placeholder replaced by the actual value, or null if not found/invalid</returns>
     public async Task<string?> FindAndReplace(string input)
     {
-        var syntaxValidator = new SyntaxValidator();
+        var result = input;
+        var tokenPatterns = RegexPatterns.GetAllPatterns();
 
-        var syntaxValidatorResponse = syntaxValidator.ValidateSyntax(input);
-
-        if (syntaxValidatorResponse.Item1 && syntaxValidatorResponse.Item2 == TokenType.ReplacementToken)
+        foreach (var pattern in tokenPatterns)
         {
-            var response = await ResolveReplacementToken(syntaxValidator, input);
-            return response;
+            var matchesCount = pattern.Matches(input).Count;
+
+            for(int i=0; i<matchesCount; i++)
+            //foreach(Match match in matches)
+            {
+                var matches = pattern.Matches(result);
+                var match = matches[(matchesCount - 1) - i];
+
+                string token = match.ToString();
+                string? replacement = null;
+
+                if (pattern == RegexPatterns.ReplacementPattern)
+                {
+                    replacement = await ResolveReplacementToken(token);
+                }
+                else if (pattern == RegexPatterns.StringTokenPattern)
+                {
+                    replacement = await ResolveStringToken(token);
+                }
+                else if (pattern == RegexPatterns.NameTokenPattern)
+                {
+                    replacement = await ResolveNameToken(token);
+                }
+                else if (pattern == RegexPatterns.NumberTokenPattern)
+                {
+                    replacement = await ResolveNumberToken(token);
+                }
+                else if (pattern == RegexPatterns.EmailTokenPattern)
+                {
+                    replacement = await ResolveEmailToken(token);
+                }
+
+                if (replacement != null)
+                {
+                    result = result.ReplaceUsingIndex(match.Index, token.Length, replacement);
+                }
+            }
         }
 
-        if (syntaxValidatorResponse.Item1 && syntaxValidatorResponse.Item2 == TokenType.StringToken)
-        {
-            var response = await ResolveStringToken(syntaxValidator, input);
-            return response;
-        }
-
-        if (syntaxValidatorResponse.Item1 && syntaxValidatorResponse.Item2 == TokenType.NameToken)
-        {
-            var response = await ResolveNameToken(syntaxValidator, input);
-            return response;
-        }
-
-        if (syntaxValidatorResponse.Item1 && syntaxValidatorResponse.Item2 == TokenType.NumberToken)
-        {
-            var response = await ResolveNumberToken(syntaxValidator, input);
-            return response;
-        }
-
-        if (syntaxValidatorResponse.Item1 && syntaxValidatorResponse.Item2 == TokenType.EmailToken)
-        {
-            var response = await ResolveEmailToken(syntaxValidator, input);
-            return response;
-        }
-
-        return null;
+        return result;
     }
 
-    private async Task<string?> ResolveReplacementToken(SyntaxValidator syntaxValidator, string input)
+    /// <summary>
+    /// Resolves and replaces replacement tokens in the input string.
+    /// </summary>
+    /// <param name="syntaxValidator"></param>
+    /// <param name="input"></param>
+    /// <returns></returns>
+    private async Task<string?> ResolveReplacementToken(string input)
     {
         // Parse the input to extract name, part and property
-        (string name, string part, string property)? parsedResponse = syntaxValidator.ParseReplacementToken(input);
+        (string name, string part, string property)? parsedResponse = _syntaxValidator.ParseReplacementToken(input);
         if (parsedResponse == null) { return null; }
 
         if (!string.IsNullOrEmpty(parsedResponse?.name))
@@ -66,7 +88,7 @@ public class ClaymoreSyntaxResolver(IResponseStore _responseStore)
             // Handle ResponseBody replacement
             if (parsedResponse?.part == ClaymoreConstants.ResponseBody)
             {
-                var storedResponse = await _responseStore.GetResponseBodyAsync(searchname);
+                string? storedResponse = await _responseStore.GetResponseBodyAsync(searchname);
                 // parse the body and get the preperty parsedResponse.property
                 if (storedResponse != null && parsedResponse?.property != null)
                 {
@@ -75,7 +97,7 @@ public class ClaymoreSyntaxResolver(IResponseStore _responseStore)
                     if (propertyValue != null)
                     {
                         // replace some text in input with the propertyValue
-                        var newresponse = Regex.Replace(input, syntaxValidator.RegexValidatorPattern, propertyValue);
+                        string newresponse = Regex.Replace(input, _syntaxValidator.RegexValidatorPattern, propertyValue);
                         return newresponse;
                     }
                 }
@@ -84,15 +106,15 @@ public class ClaymoreSyntaxResolver(IResponseStore _responseStore)
             // Handle ResponseHeader replacement
             if (parsedResponse?.part == ClaymoreConstants.ResponseHeader)
             {
-                var headerResponse = await _responseStore.GetResponseHeaderAsync(searchname);
+                string headerResponse = await _responseStore.GetResponseHeaderAsync(searchname);
 
                 if (headerResponse != null && parsedResponse?.property != null)
                 {
-                    var headerValue = GetValueFromJson(headerResponse, parsedResponse?.property);
+                    string? headerValue = GetValueFromJson(headerResponse, parsedResponse?.property);
 
                     if (headerValue != null)
                     {
-                        var newResponse = Regex.Replace(input, syntaxValidator.RegexValidatorPattern, headerValue);
+                        string newResponse = Regex.Replace(input, _syntaxValidator.RegexValidatorPattern, headerValue);
                         return newResponse;
                     }
                 }
@@ -102,29 +124,62 @@ public class ClaymoreSyntaxResolver(IResponseStore _responseStore)
         return null;
     }
 
-    private async Task<string?> ResolveBooleanToken(SyntaxValidator syntaxValidator, string input)
-    {
 
+    /// <summary>
+    /// Resolves and replaces boolean tokens in the input string.
+    /// </summary>
+    private async Task<bool?> ResolveBooleanToken(string input)
+    {
+        var parsedResponse = _syntaxValidator.ParseBooleanToken(input);
+        if(parsedResponse == null) { return null; }
+
+        return new Random().Next(2) == 0;
     }
 
-    private async Task<string?> ResolveStringToken(SyntaxValidator syntaxValidator, string input)
+    /// <summary>
+    /// Resolves and replaces string tokens in the input string.
+    /// </summary>
+    private async Task<string?> ResolveStringToken(string input)
     {
-
+        // call TextGenerator
+        (string token, int length)? parsedResponse = _syntaxValidator.ParseStringToken(input);
+        if (parsedResponse == null) { return null; }
+        
+        int len = parsedResponse?.length ?? 0;
+        string generatedString = await _dataGenerator.GenerateString(len);
+        return Regex.Replace(input, RegexPatterns.StringTokenPattern.ToString(), generatedString);
     }
 
-    private async Task<string?> ResolveNameToken(SyntaxValidator syntaxValidator, string input)
+    /// <summary>
+    /// Resolves and replaces name tokens in the input string.
+    /// </summary>
+    private async Task<string?> ResolveNameToken(string input)
     {
-
+        string generatedName = await _dataGenerator.GenerateName();
+        return Regex.Replace(input, RegexPatterns.NameTokenPattern.ToString(), generatedName);
     }
 
-    private async Task<string?> ResolveNumberToken(SyntaxValidator syntaxValidator, string input)
+    /// <summary>
+    /// Resolves and replaces number tokens in the input string.
+    /// </summary>
+    private async Task<string?> ResolveNumberToken(string input)
     {
+        (string token, int length)? parsedResponse = _syntaxValidator.ParseNumberToken(input);
+        if (parsedResponse == null) { return null; }
 
+        int len = parsedResponse?.length ?? 0;
+        int generatedNumber = await _dataGenerator.GenerateNumber(len);
+        return Regex.Replace(input, RegexPatterns.NumberTokenPattern.ToString(), generatedNumber.ToString());
     }
 
-    private async Task<string?> ResolveEmailToken(SyntaxValidator syntaxValidator, string input)
+    /// <summary>
+    /// Resolves and replaces email tokens in the input string.
+    /// </summary>
+    private async Task<string?> ResolveEmailToken(string input)
     {
-
+        string generatedEmail = await _dataGenerator.GenerateEmail();
+        string newResponse = Regex.Replace(input, RegexPatterns.EmailTokenPattern.ToString(), generatedEmail);
+        return newResponse;
     }
 
 
@@ -136,10 +191,16 @@ public class ClaymoreSyntaxResolver(IResponseStore _responseStore)
     /// <returns>The value of the specified property, or null if not found.</returns>
     private string? GetValueFromJson(string json, string property)
     {
-        var jsonObject = JObject.Parse(json);
-        var token = jsonObject.SelectToken($"$..{property}");
+        try
+        {
+            var jsonObject = JObject.Parse(json);
+            var token = jsonObject.SelectToken($"$..{property}");
 
-        return token?.ToString();
+            return token?.ToString();
+        }
+        catch (Exception ex) {
+            return null;
+        }
     }
 }
 
@@ -150,6 +211,11 @@ public class SyntaxValidator
 
     public string RegexValidatorPattern { get { return pattern.ToString(); } }
 
+    /// <summary>
+    /// Validates the syntax of the input string and identifies the token type.
+    /// </summary>
+    /// <param name="input"></param>
+    /// <returns></returns>
     public (bool, TokenType) ValidateSyntax(string input)
     {
         if (pattern.IsMatch(input))
@@ -182,6 +248,68 @@ public class SyntaxValidator
             var property = match.Groups["property"].Value;
 
             return (name, part, property);
+        }
+
+        return null;
+    }
+
+    public string? ParseBooleanToken(string input)
+    {
+        var match = RegexPatterns.BooleanTokenPattern.Match(input);
+        if (match.Success)
+        {
+            var token = match.Groups[ClaymoreConstants.token].Value;
+            return token;
+        }
+
+        return null;
+    }
+
+    public (string token, int length)? ParseStringToken(string input)
+    {
+        var match = RegexPatterns.StringTokenPattern.Match(input);
+        if (match.Success)
+        {
+            var token = match.Groups[ClaymoreConstants.token].Value;
+            var length = match.Groups[ClaymoreConstants.length].Value;
+            return (token, int.Parse(length));
+        }
+
+        return null;
+    }
+
+    public string? ParseNameToken(string input)
+    {
+        var match = RegexPatterns.NameTokenPattern.Match(input);
+        if (match.Success)
+        {
+            var token = match.Groups[ClaymoreConstants.token].Value;
+            return token;
+        }
+
+        return null;
+    }
+
+    public (string token, int length)? ParseNumberToken(string input)
+    {
+        var match = RegexPatterns.NumberTokenPattern.Match(input);
+        if (match.Success)
+        {
+            var token = match.Groups[ClaymoreConstants.token].Value;
+            var length = match.Groups[ClaymoreConstants.length].Value;
+            return (token, int.Parse(length));
+        }
+
+        return null;
+    }
+
+    public string? ParseEmailToken(string input)
+    {
+        var match = RegexPatterns.EmailTokenPattern.Match(input);
+        if (match.Success)
+        {
+            var token = match.Groups[ClaymoreConstants.token].Value;
+            return token;
         }
 
         return null;

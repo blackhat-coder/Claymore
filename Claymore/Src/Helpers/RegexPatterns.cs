@@ -47,6 +47,19 @@ public static class RegexPatterns
     /// <summary>
     /// Matches an email address token placeholder: $email
     /// </summary>
-    private static readonly Regex _emailTokenPattern = new Regex(@"", RegexOptions.Compiled);
+    private static readonly Regex _emailTokenPattern = new Regex(@"(?<token>\$email)", RegexOptions.Compiled);
     public static Regex EmailTokenPattern { get {return _emailTokenPattern; } }
+
+    public static List<Regex> GetAllPatterns()
+    {
+        return new List<Regex>
+        {
+            _replacementPattern,
+            _booleanTokenPattern,
+            _stringTokenPattern,
+            _numberTokenPattern,
+            _emailTokenPattern,
+            _nameTokenPattern,
+        };
+    }
 }

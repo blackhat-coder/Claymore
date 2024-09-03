@@ -1,4 +1,5 @@
-﻿using Claymore.Src.Models;
+﻿using Claymore.Src.Helpers;
+using Claymore.Src.Models;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -159,11 +160,18 @@ public static class ConfigurationReader
         {
             foreach(var dependsOn in requestInfo.dependsOn)
             {
-                if (!names.Contains(dependsOn))
+                if (!names.Contains(dependsOn.name))
                 {
                     string errorMesage = $"Syntax Error ({_configFile}): {requestInfo.name} depends on: {dependsOn} Not Found.";
                     _logger?.LogError(errorMesage);
                     throw new Exception(errorMesage);
+                }
+
+                if(dependsOn.condition != ClaymoreConstants.Success && dependsOn.condition != ClaymoreConstants.Error)
+                {
+                    string errorMessage = $"Unable to parse dependsOn condition: {dependsOn.condition}; condition should either be {ClaymoreConstants.Success} or {ClaymoreConstants.Error}";
+                    _logger?.LogError(errorMessage);
+                    throw new Exception(errorMessage);
                 }
             }
         }
