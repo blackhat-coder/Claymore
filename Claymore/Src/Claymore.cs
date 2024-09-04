@@ -10,6 +10,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Json;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -45,6 +46,9 @@ public class ClaymoreWorkers
             {
                 if (endpointInfo.method == HttpConfigMethod.GET)
                 {
+                    if (!(await ShouldProcessEndpoint(endpointInfo)))
+                        continue;
+
                     var resolver = new ClaymoreSyntaxResolver(_responseStore, _dataGenerator);
                     await _httpClient.AddRequestHeaders(resolver, endpointInfo.headers);
 
@@ -54,11 +58,14 @@ public class ClaymoreWorkers
                     _stopWatch.Stop();
 
                     var respContent = await response.Content.ReadAsStringAsync();
-                    await _responseStore.StoreResponseAsync($"{Thread.CurrentThread.ManagedThreadId}_{endpointInfo.name}", response.Headers.ToJsonString(), respContent);
+                    await _responseStore.StoreResponseAsync($"{Thread.CurrentThread.ManagedThreadId}_{endpointInfo.name}", response.Headers.ToJsonString(), respContent, response.IsSuccessStatusCode);
                 }
                 
                 if (endpointInfo.method == HttpConfigMethod.POST)
                 {
+                    if (!(await ShouldProcessEndpoint(endpointInfo)))
+                        continue;
+
                     var resolver = new ClaymoreSyntaxResolver(_responseStore, _dataGenerator);
                     
                     string stringPayload = Convert.ToString(endpointInfo.payload);
@@ -74,7 +81,7 @@ public class ClaymoreWorkers
                     _stopWatch.Stop();
 
                     var respContent = await response.Content.ReadAsStringAsync();
-                    await _responseStore.StoreResponseAsync($"{Thread.CurrentThread.ManagedThreadId}_{endpointInfo.name}", response.Headers.ToJsonString(), respContent);
+                    await _responseStore.StoreResponseAsync($"{Thread.CurrentThread.ManagedThreadId}_{endpointInfo.name}", response.Headers.ToJsonString(), respContent, response.IsSuccessStatusCode);
                 }
             }
         }
@@ -82,5 +89,28 @@ public class ClaymoreWorkers
         {
             _logger.LogError(ex.Message);
         }
+    }
+
+    /// <summary>
+    /// Returns a boolean indicating if the task should be run by the worker
+    /// Takes TaskInfo
+    /// </summary>
+    /// <returns></returns>
+    private async Task<bool> ShouldProcessEndpoint(EndpointInfo endpointInfo)
+    {
+        var response = new List<bool>();
+
+        var dependsOn = endpointInfo.dependsOn;
+
+        foreach(var x in dependsOn)
+        {
+            bool successCondition = x.condition == ClaymoreConstants.Success ? true : false;
+            var success = await _responseStore.GetTaskStatus($"{Thread.CurrentThread.ManagedThreadId}_{x.name}");
+            var sRun = success == successCondition;
+            if (!sRun)
+                response.Add(false);
+        }
+
+        return response.Count == 0;
     }
 }

@@ -9,14 +9,14 @@ namespace Claymore.Src.Services.ResponseStore
 {
     public class FileResponseStore(ILogger<FileResponseStore> _logger) : IResponseStore
     {
-        public Task StoreResponseAsync(string id, string headers, object response)
+        public Task StoreResponseAsync(string id, string headers, object response, bool success)
         {
             try
             {
                 if (string.IsNullOrEmpty(id))
                     throw new ArgumentException("Please provide a valid Id");
 
-                var line = $"{id}|{headers}|{response}\n#";
+                var line = $"{id}|{headers}|{response}|{success.ToString()}\n#";
                 using (StreamWriter sw = new StreamWriter("response.txt", true))
                 {
                     sw.Write(line);
@@ -30,15 +30,14 @@ namespace Claymore.Src.Services.ResponseStore
             }
         }
 
-        public Task StoreResponseAsync(string id, string headers, string response)
+        public Task StoreResponseAsync(string id, string headers, string response, bool success)
         {
             try
             {
-                Console.WriteLine(Thread.CurrentThread.ManagedThreadId);
                 if (string.IsNullOrEmpty(id))
                     throw new ArgumentException("Please provide a valid Id");
 
-                var line = $"{id}|{headers}|{response}\n#";
+                var line = $"{id}|{headers}|{response}|{success.ToString()}\n#";
                 using (StreamWriter sw = new StreamWriter("response.txt", true))
                 {
                     sw.Write(line);
@@ -148,6 +147,41 @@ namespace Claymore.Src.Services.ResponseStore
             {
                 _logger.LogError($"Error Getting response, msg: {ex.Message}");
                 return Task.FromResult<string>(string.Empty);
+            }
+        }
+
+        public Task<bool> GetTaskStatus(string id)
+        {
+            try
+            {
+                Console.WriteLine(Thread.CurrentThread.ManagedThreadId);
+                if (string.IsNullOrEmpty(id))
+                    throw new ArgumentException("Please provide a valid Id");
+
+                using (StreamReader sr = new StreamReader("response.txt"))
+                {
+                    string line;
+
+                    while ((line = sr.ReadToEnd()) != null)
+                    {
+                        var entries = line.Split("#");
+                        foreach (var entry in entries)
+                        {
+                            var splits = entry.Split("|");
+                            if (splits[0] == id)
+                            {
+                                return Task.FromResult<bool>(bool.Parse(splits[3]));
+                            }
+                        }
+                    }
+                }
+
+                return Task.FromResult<bool>(false);
+            }
+            catch(Exception ex)
+            {
+                _logger.LogError($"Error Getting task success, msg: {ex.Message}");
+                return Task.FromResult<bool>(false);
             }
         }
     }
