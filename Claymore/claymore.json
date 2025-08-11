@@ -3,7 +3,7 @@
     {
       "name": "weatherOne",
       "endpoint": "https://localhost:44384/WeatherForecast",
-      "priority": 1,
+      "order": 1,
       "method": "GET",
       "headers": [
       ],
@@ -14,7 +14,7 @@
     {
       "name": "weatherTwo",
       "endpoint": "https://localhost:44384/WeatherForecast",
-      "priority": 1,
+      "order": 2,
       "method": "POST",
       "headers": [
         {
