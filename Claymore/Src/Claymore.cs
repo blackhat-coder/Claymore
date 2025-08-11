@@ -42,7 +42,7 @@ public class ClaymoreWorkers
             var endpointsInfo = ConfigurationReader.Config.endpointsInfo;
 
             // Loop through the requests
-            foreach(var endpointInfo in endpointsInfo)
+            foreach(var endpointInfo in endpointsInfo.OrderBy(x => x.order))
             {
                 if (endpointInfo.method == HttpConfigMethod.GET)
                 {

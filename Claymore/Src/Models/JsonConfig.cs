@@ -17,7 +17,7 @@ public class EndpointInfo
 {
     public string name { get; set; }
     public string endpoint { get; set; }
-    public int priority { get; set; }
+    public int order { get; set; }
     public HttpConfigMethod method { get; set; }
     public List<Header> headers { get; set; }
     public dynamic payload { get; set; }
