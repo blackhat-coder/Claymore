@@ -22,5 +22,6 @@ namespace Claymore.Src.Services.ResponseStore
         Task<string> GetResponseHeaderAsync(string id);
         Task<string> GetResponseBodyAsync(string id);
         Task<bool> GetTaskStatus(string id);
+        Task StoreTaskAsync(string workerId, string headers, object response, bool success, int elapsedTime);
     }
 }

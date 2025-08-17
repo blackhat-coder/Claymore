@@ -184,5 +184,10 @@ namespace Claymore.Src.Services.ResponseStore
                 return Task.FromResult<bool>(false);
             }
         }
+
+        public Task StoreTaskAsync(string workerId, string headers, object response, bool success, int elapsedTime)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
