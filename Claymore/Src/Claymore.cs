@@ -33,55 +33,55 @@ public class ClaymoreWorkers
         _dataGenerator = dataGenerator;
     }
 
-    public async Task Run()
+    public async System.Threading.Tasks.Task Run()
     {
         try
         {
             _logger.LogInformation("Trying");
 
-            var endpointsInfo = ConfigurationReader.Config.endpointsInfo;
+            var tasks = ConfigurationReader.Config.tasks;
 
             // Loop through the requests
-            foreach(var endpointInfo in endpointsInfo.OrderBy(x => x.order))
+            foreach(var task in tasks.OrderBy(x => x.order))
             {
-                if (endpointInfo.method == HttpConfigMethod.GET)
+                if (task.method == HttpConfigMethod.GET)
                 {
-                    if (!(await ShouldProcessEndpoint(endpointInfo)))
+                    if (!(await ShouldProcessEndpoint(task)))
                         continue;
 
                     var resolver = new ClaymoreSyntaxResolver(_responseStore, _dataGenerator);
-                    await _httpClient.AddRequestHeaders(resolver, endpointInfo.headers);
+                    await _httpClient.AddRequestHeaders(resolver, task.headers);
 
                     _stopWatch.Start();
 
-                    var response = await _httpClient.GetAsync(endpointInfo.endpoint);
+                    var response = await _httpClient.GetAsync(task.endpoint);
                     _stopWatch.Stop();
 
                     var respContent = await response.Content.ReadAsStringAsync();
-                    await _responseStore.StoreResponseAsync($"{Thread.CurrentThread.ManagedThreadId}_{endpointInfo.name}", response.Headers.ToJsonString(), respContent, response.IsSuccessStatusCode);
+                    await _responseStore.StoreResponseAsync($"{Thread.CurrentThread.ManagedThreadId}_{task.name}", response.Headers.ToJsonString(), respContent, response.IsSuccessStatusCode);
                 }
                 
-                if (endpointInfo.method == HttpConfigMethod.POST)
+                if (task.method == HttpConfigMethod.POST)
                 {
-                    if (!(await ShouldProcessEndpoint(endpointInfo)))
+                    if (!(await ShouldProcessEndpoint(task)))
                         continue;
 
                     var resolver = new ClaymoreSyntaxResolver(_responseStore, _dataGenerator);
                     
-                    string stringPayload = Convert.ToString(endpointInfo.payload);
+                    string stringPayload = Convert.ToString(task.payload);
                     string payload = (await resolver.FindAndReplace(stringPayload)) ?? "";
                     StringContent content = new StringContent(payload, Encoding.UTF8, "application/json");
 
-                    await _httpClient.AddRequestHeaders(resolver, endpointInfo.headers);
+                    await _httpClient.AddRequestHeaders(resolver, task.headers);
 
                     _stopWatch.Start();
                     
-                    var response = await _httpClient.PostAsync(endpointInfo.endpoint, content);
+                    var response = await _httpClient.PostAsync(task.endpoint, content);
 
                     _stopWatch.Stop();
 
                     var respContent = await response.Content.ReadAsStringAsync();
-                    await _responseStore.StoreResponseAsync($"{Thread.CurrentThread.ManagedThreadId}_{endpointInfo.name}", response.Headers.ToJsonString(), respContent, response.IsSuccessStatusCode);
+                    await _responseStore.StoreResponseAsync($"{Thread.CurrentThread.ManagedThreadId}_{task.name}", response.Headers.ToJsonString(), respContent, response.IsSuccessStatusCode);
                 }
             }
         }
@@ -96,7 +96,7 @@ public class ClaymoreWorkers
     /// Takes TaskInfo
     /// </summary>
     /// <returns></returns>
-    private async Task<bool> ShouldProcessEndpoint(EndpointInfo endpointInfo)
+    private async Task<bool> ShouldProcessEndpoint(Models.Task endpointInfo)
     {
         var response = new List<bool>();
 

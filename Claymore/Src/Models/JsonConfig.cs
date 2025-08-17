@@ -10,10 +10,10 @@ namespace Claymore.Src.Models;
 
 public class JsonConfig
 {
-    public List<EndpointInfo> endpointsInfo { get; set; }
+    public List<Task> tasks { get; set; }
 }
 
-public class EndpointInfo
+public class Task
 {
     public string name { get; set; }
     public string endpoint { get; set; }

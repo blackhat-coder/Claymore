@@ -120,7 +120,7 @@ public static class ConfigurationReader
         if (_config == null)
             Read();
 
-        return _config?.endpointsInfo.Count ?? 0;
+        return _config?.tasks.Count ?? 0;
     }
 
     /// <summary>
@@ -132,7 +132,7 @@ public static class ConfigurationReader
         if (_config == null)
             Read();
 
-        return _config?.endpointsInfo.Select(e => e.endpoint).ToList() ?? Enumerable.Empty<string>();
+        return _config?.tasks.Select(e => e.endpoint).ToList() ?? Enumerable.Empty<string>();
     }
 
     /// <summary>
@@ -145,7 +145,7 @@ public static class ConfigurationReader
         if (Config == null)
             return;
 
-        List<string> names = _config.endpointsInfo.Select(e => e.name).ToList();
+        List<string> names = _config.tasks.Select(e => e.name).ToList();
 
         // Check distinct names
         if(names.Distinct().Count() != names.Count)
@@ -156,7 +156,7 @@ public static class ConfigurationReader
         }
 
         // Check Depends On
-        foreach (var requestInfo in Config?.endpointsInfo)
+        foreach (var requestInfo in Config?.tasks)
         {
             foreach(var dependsOn in requestInfo.dependsOn)
             {

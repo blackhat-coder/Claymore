@@ -1,5 +1,5 @@
 {
-  "endpointsInfo": [
+  "tasks": [
     {
       "name": "weatherOne",
       "endpoint": "https://localhost:44384/WeatherForecast",
