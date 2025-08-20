@@ -1,5 +1,6 @@
 ﻿using Claymore.Src.Enums;
-using Claymore.Src.Services.ResponseStore;
+using Claymore.Src.Models;
+using Claymore.Src.Persistence.Repository;
 using Claymore.Src.Services.TextGeneration;
 using Claymore.Src.Utils;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -8,7 +9,7 @@ using System.Text.RegularExpressions;
 
 namespace Claymore.Src.Helpers;
 
-public class ClaymoreSyntaxResolver(IResponseStore _responseStore, IDataGenerator _dataGenerator)
+public class ClaymoreSyntaxResolver(IGenericRepository<TaskResult> _taskRepository, IDataGenerator _dataGenerator)
 {
 
     private readonly SyntaxValidator _syntaxValidator = new SyntaxValidator();
@@ -82,13 +83,14 @@ public class ClaymoreSyntaxResolver(IResponseStore _responseStore, IDataGenerato
 
         if (!string.IsNullOrEmpty(parsedResponse?.name))
         {
+            string name = parsedResponse?.name!;
             // Use the current thread Id to build the search name
             string searchname = $"{Thread.CurrentThread.ManagedThreadId}_{parsedResponse?.name}";
 
             // Handle ResponseBody replacement
             if (parsedResponse?.part == ClaymoreConstants.ResponseBody)
             {
-                string? storedResponse = await _responseStore.GetResponseBodyAsync(searchname);
+                string? storedResponse = (await _taskRepository.GetFirstOrDefault(x => x.EndpointName == name))?.ResponseBody;
                 // parse the body and get the preperty parsedResponse.property
                 if (storedResponse != null && parsedResponse?.property != null)
                 {
@@ -106,7 +108,7 @@ public class ClaymoreSyntaxResolver(IResponseStore _responseStore, IDataGenerato
             // Handle ResponseHeader replacement
             if (parsedResponse?.part == ClaymoreConstants.ResponseHeader)
             {
-                string headerResponse = await _responseStore.GetResponseHeaderAsync(searchname);
+                string? headerResponse = (await _taskRepository.GetFirstOrDefault(x => x.EndpointName == name))?.ResponseHeader;
 
                 if (headerResponse != null && parsedResponse?.property != null)
                 {

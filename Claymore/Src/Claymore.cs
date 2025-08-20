@@ -1,7 +1,7 @@
 ﻿using Claymore.Src.Enums;
 using Claymore.Src.Helpers;
 using Claymore.Src.Models;
-using Claymore.Src.Services.ResponseStore;
+using Claymore.Src.Persistence.Repository;
 using Claymore.Src.Services.TextGeneration;
 using Microsoft.Extensions.Logging;
 using System;
@@ -21,16 +21,19 @@ public class ClaymoreWorkers
     private readonly HttpClient _httpClient;
     private Stopwatch _stopWatch;
     private ILogger<ClaymoreWorkers> _logger;
-    private IResponseStore _responseStore;
+    private readonly IGenericRepository<TaskResult> _taskRepository;
     private IDataGenerator _dataGenerator;
 
-    public ClaymoreWorkers(ILogger<ClaymoreWorkers> logger, IHttpClientFactory httpClientFactory, IResponseStore responseStore, IDataGenerator dataGenerator)
+    private static int _workerCounter = 0;
+
+    public ClaymoreWorkers(ILogger<ClaymoreWorkers> logger, IHttpClientFactory httpClientFactory, IGenericRepository<TaskResult> taskRepository
+        , IDataGenerator dataGenerator)
     {
         _httpClient = httpClientFactory.CreateClient();
         _logger = logger;
-        _responseStore = responseStore;
         _stopWatch = Stopwatch.StartNew();
         _dataGenerator = dataGenerator;
+        _taskRepository = taskRepository;
     }
 
     public async System.Threading.Tasks.Task Run()
@@ -46,10 +49,13 @@ public class ClaymoreWorkers
             {
                 if (task.method == HttpConfigMethod.GET)
                 {
+
+                    var workerId = $"worker-{Interlocked.Increment(ref _workerCounter)}";
+
                     if (!(await ShouldProcessEndpoint(task)))
                         continue;
 
-                    var resolver = new ClaymoreSyntaxResolver(_responseStore, _dataGenerator);
+                    var resolver = new ClaymoreSyntaxResolver(_taskRepository, _dataGenerator);
                     await _httpClient.AddRequestHeaders(resolver, task.headers);
 
                     _stopWatch.Start();
@@ -58,15 +64,29 @@ public class ClaymoreWorkers
                     _stopWatch.Stop();
 
                     var respContent = await response.Content.ReadAsStringAsync();
-                    await _responseStore.StoreResponseAsync($"{Thread.CurrentThread.ManagedThreadId}_{task.name}", response.Headers.ToJsonString(), respContent, response.IsSuccessStatusCode);
+
+                    await _taskRepository.Add(new TaskResult
+                    {
+                        Id = Guid.NewGuid().ToString(),
+                        WorkerId = workerId,
+                        EndpointName = task.name,
+                        Order = task.order,
+                        ResponseHeader = response.Headers.ToJsonString(),
+                        ResponseBody = respContent,
+                        Success = response.IsSuccessStatusCode,
+                        ElapsedTime = _stopWatch.ElapsedMilliseconds
+                    });
+                    await _taskRepository.SaveChanges();
                 }
                 
                 if (task.method == HttpConfigMethod.POST)
                 {
+                    var workerId = $"worker-{Interlocked.Increment(ref _workerCounter)}";
+
                     if (!(await ShouldProcessEndpoint(task)))
                         continue;
 
-                    var resolver = new ClaymoreSyntaxResolver(_responseStore, _dataGenerator);
+                    var resolver = new ClaymoreSyntaxResolver(_taskRepository, _dataGenerator);
                     
                     string stringPayload = Convert.ToString(task.payload);
                     string payload = (await resolver.FindAndReplace(stringPayload)) ?? "";
@@ -81,7 +101,19 @@ public class ClaymoreWorkers
                     _stopWatch.Stop();
 
                     var respContent = await response.Content.ReadAsStringAsync();
-                    await _responseStore.StoreResponseAsync($"{Thread.CurrentThread.ManagedThreadId}_{task.name}", response.Headers.ToJsonString(), respContent, response.IsSuccessStatusCode);
+
+                    await _taskRepository.Add(new TaskResult
+                    {
+                        Id = Guid.NewGuid().ToString(),
+                        WorkerId = workerId,
+                        EndpointName = task.name,
+                        Order = task.order,
+                        ResponseHeader = response.Headers.ToJsonString(),
+                        ResponseBody = respContent,
+                        Success = response.IsSuccessStatusCode,
+                        ElapsedTime = _stopWatch.ElapsedMilliseconds
+                    });
+                    await _taskRepository.SaveChanges();
                 }
             }
         }
@@ -96,16 +128,16 @@ public class ClaymoreWorkers
     /// Takes TaskInfo
     /// </summary>
     /// <returns></returns>
-    private async Task<bool> ShouldProcessEndpoint(Models.Task endpointInfo)
+    private async Task<bool> ShouldProcessEndpoint(Models.Task task)
     {
         var response = new List<bool>();
 
-        var dependsOn = endpointInfo.dependsOn;
+        var dependsOn = task.dependsOn;
 
         foreach(var x in dependsOn)
         {
             bool successCondition = x.condition == ClaymoreConstants.Success ? true : false;
-            var success = await _responseStore.GetTaskStatus($"{Thread.CurrentThread.ManagedThreadId}_{x.name}");
+            var success = (await _taskRepository.GetFirstOrDefault(task => task.WorkerId == "" && task.EndpointName == x.name))?.Success;
             var sRun = success == successCondition;
             if (!sRun)
                 response.Add(false);

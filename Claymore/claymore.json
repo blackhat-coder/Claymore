@@ -1,33 +1,14 @@
 {
   "tasks": [
     {
-      "name": "weatherOne",
-      "endpoint": "https://localhost:44384/WeatherForecast",
+      "name": "currencyRates",
+      "endpoint": "https://send-service-onboarding.dev-flutterwave.com/api/v1/config/getcurrencyrate?fromCurrency=NGN&toCurrency=USD&tenant=SEND",
       "order": 1,
       "method": "GET",
       "headers": [
       ],
       "payload": "",
       "dependsOn": [
-      ]
-    },
-    {
-      "name": "weatherTwo",
-      "endpoint": "https://localhost:44384/WeatherForecast",
-      "order": 2,
-      "method": "POST",
-      "headers": [
-        {
-          "key": "Authorization",
-          "value": "Bearer $weatherOne.ResponseBody.token"
-        }
-      ],
-      "payload": "{\"summary\":\"Composing Email:$email, Number:$number[3], Name:$name, String:$string[5]\"}",
-      "dependsOn": [
-        {
-          "name": "weatherOne",
-          "condition": "success"
-        }
       ]
     }
   ]

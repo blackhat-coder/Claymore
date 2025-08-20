@@ -1,6 +1,6 @@
 ﻿using Claymore.Src;
 using Claymore.Src.Persistence;
-using Claymore.Src.Services.ResponseStore;
+using Claymore.Src.Persistence.Repository;
 using Claymore.Src.Services.TextGeneration;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -23,8 +23,8 @@ public static class ServiceCollections
         services.AddLogging(builder => builder.AddConsole());
         services.AddHttpClient();
 
-        services.AddTransient<IResponseStore, FileResponseStore>();
         services.AddScoped<IDataGenerator, DataGenerator>();
+        services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
         services.AddTransient<ClaymoreWorkers>();
 
         return services;

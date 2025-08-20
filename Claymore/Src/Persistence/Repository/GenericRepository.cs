@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,12 +15,14 @@ public class GenericRepository<T>
     private DataContext _dbContext;
     private DbSet<T> _dbSet;
     private bool _isDisposed;
+    private ILogger<GenericRepository<T>> _logger;
 
-    public GenericRepository(DataContext dbContext)
+    public GenericRepository(DataContext dbContext, ILogger<GenericRepository<T>> logger)
     {
         _dbContext = dbContext;
         _dbSet = _dbContext.Set<T>();
         _isDisposed = false;
+        _logger = logger;
     }
 
     public void Dispose()
@@ -68,7 +71,14 @@ public class GenericRepository<T>
 
     public async Task<bool> SaveChanges()
     {
-        await _dbContext.SaveChangesAsync();
-        return true;
+        try
+        {
+            await _dbContext.SaveChangesAsync();
+            return true;
+        }catch(Exception ex)
+        {
+            _logger.LogError(ex.Message);
+            return false;
+        }
     }
 }

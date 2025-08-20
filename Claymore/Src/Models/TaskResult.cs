@@ -18,5 +18,5 @@ public class TaskResult
     public string? ResponseHeader { get; set; }
     public string? ResponseBody { get; set; }
     public bool Success { get; set; }
-    public int ElapsedTime { get; set; }
+    public long ElapsedTime { get; set; }
 }

@@ -15,7 +15,8 @@ public class DataContext : DbContext
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
-        optionsBuilder.UseSqlite($"Data Source=..\\Claymore.db");
+        /*optionsBuilder.UseSqlite($"Data Source=..\\db\\Claymore.db");*/
+        optionsBuilder.UseSqlite("Data Source=C:\\Users\\aboh.israel\\OneDrive\\Documents\\Codes\\Claymore\\db\\Claymore.db");
     }
     public DbSet<TaskResult> Tasks { get; set; }
 }
