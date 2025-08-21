@@ -12,15 +12,14 @@ namespace Claymore.Src.Persistence.Repository;
 public class GenericRepository<T>
     : IGenericRepository<T>, IDisposable where T : class
 {
-    private DataContext _dbContext;
-    private DbSet<T> _dbSet;
+    private DataContextFactory _dbContextFactory;
     private bool _isDisposed;
     private ILogger<GenericRepository<T>> _logger;
+    private DataContext? _dbContext;
 
-    public GenericRepository(DataContext dbContext, ILogger<GenericRepository<T>> logger)
+    public GenericRepository(DataContextFactory dbContextFactory, ILogger<GenericRepository<T>> logger)
     {
-        _dbContext = dbContext;
-        _dbSet = _dbContext.Set<T>();
+        _dbContextFactory = dbContextFactory;
         _isDisposed = false;
         _logger = logger;
     }
@@ -30,50 +29,73 @@ public class GenericRepository<T>
         Dispose();
         GC.SuppressFinalize(this);
     }
-    public Task<bool> Add(T item)
+
+    private async Task<DataContext> GetContext(DataContext? context)
     {
-        _dbSet.Add(item);
-        return Task.FromResult(true);
+        if (context != null) return context;
+            
+        if(_dbContext == null)
+            _dbContext = await _dbContextFactory.CreateDbContextAsync();
+
+        return _dbContext;
     }
 
-    public Task<bool> Update(T item)
+    public async Task<bool> Add(T item, DataContext? context = null)
     {
-        _dbSet.Update(item);
-        return Task.FromResult(true);
+        var dbContext = await GetContext(context);
+        
+        dbContext.Set<T>().Add(item);
+        return true;
     }
 
-    public Task<bool> AddRange(T item)
+    public async Task<bool> Update(T item, DataContext? context = null)
     {
-        _dbSet.AddRange(item);
-        return Task.FromResult(true);
+        var dbContext = await GetContext(context);
+
+        dbContext.Set<T>().Update(item);
+        return true;
     }
 
-    public Task<bool> Delete(T item)
+    public async Task<bool> AddRange(T item, DataContext? context = null)
     {
-        _dbSet.Remove(item);
-        return Task.FromResult(true);
+        var dbContext = await GetContext(context);
+
+        dbContext.Set<T>().AddRange(item);
+        return true;
     }
 
-    public async Task<List<T>> GetAll()
+    public async Task<bool> Delete(T item, DataContext? context = null)
     {
-        return await _dbSet.AsNoTracking().ToListAsync();
+        var dbContext = await GetContext(context);
+
+        dbContext.Set<T>().Remove(item);
+        return true;
     }
 
-    public async Task<List<T>> GetAll(Expression<Func<T, bool>> predicate)
+    public async Task<List<T>> GetAll(DataContext? context = null)
     {
-        return await _dbSet.Where(predicate).ToListAsync();
+        var dbContext = await GetContext(context);
+        return await dbContext.Set<T>().AsNoTracking().ToListAsync();
     }
 
-    public async Task<T?> GetFirstOrDefault(Expression<Func<T, bool>> predicate)
+    public async Task<List<T>> GetAll(Expression<Func<T, bool>> predicate, DataContext? context = null)
     {
-        return await _dbSet.FirstOrDefaultAsync(predicate);
+        var dbContext = await GetContext(context);
+        return await dbContext.Set<T>().Where(predicate).ToListAsync();
     }
 
-    public async Task<bool> SaveChanges()
+    public async Task<T?> GetFirstOrDefault(Expression<Func<T, bool>> predicate, DataContext? context = null)
+    {
+        var dbContext = await GetContext(context);
+        return await dbContext.Set<T>().FirstOrDefaultAsync(predicate);
+    }
+
+    public async Task<bool> SaveChanges(DataContext? context = null)
     {
         try
         {
-            await _dbContext.SaveChangesAsync();
+            var dbContext = await GetContext(context);
+            await dbContext.SaveChangesAsync();
             return true;
         }catch(Exception ex)
         {

@@ -18,7 +18,9 @@ public static class ServiceCollections
 {
     public static IServiceCollection AddAppServices(this IServiceCollection services)
     {
-        services.AddDbContext<DataContext>();
+        services.AddPooledDbContextFactory<DataContext>(
+            options => options.UseSqlite("Data Source=C:\\Users\\aboh.israel\\OneDrive\\Documents\\Codes\\Claymore\\db\\Claymore.db"));
+        services.AddScoped<DataContextFactory>();
 
         services.AddLogging(builder => builder.AddConsole());
         services.AddHttpClient();

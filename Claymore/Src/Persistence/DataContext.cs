@@ -10,13 +10,6 @@ namespace Claymore.Src.Persistence;
 
 public class DataContext : DbContext
 {
-    public DataContext() { }
-    /*public DataContext(DbContextOptions<DataContext> options) : base(options) { }*/
-
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-    {
-        /*optionsBuilder.UseSqlite($"Data Source=..\\db\\Claymore.db");*/
-        optionsBuilder.UseSqlite("Data Source=C:\\Users\\aboh.israel\\OneDrive\\Documents\\Codes\\Claymore\\db\\Claymore.db");
-    }
+    public DataContext(DbContextOptions<DataContext> options) : base(options) { }   
     public DbSet<TaskResult> Tasks { get; set; }
 }

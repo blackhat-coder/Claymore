@@ -9,12 +9,12 @@ namespace Claymore.Src.Persistence.Repository;
 
 public interface IGenericRepository<T>
 {
-    Task<List<T>> GetAll();
-    Task<List<T>> GetAll(Expression<Func<T, bool>> predicate);
-    Task<T?> GetFirstOrDefault(Expression<Func<T, bool>> predicate);
-    Task<bool> Add(T item);
-    Task<bool> AddRange(T item);
-    Task<bool> Update(T item);
-    Task<bool> Delete(T item);
-    Task<bool> SaveChanges();
+    Task<List<T>> GetAll(DataContext? context = null);
+    Task<List<T>> GetAll(Expression<Func<T, bool>> predicate, DataContext? context = null);
+    Task<T?> GetFirstOrDefault(Expression<Func<T, bool>> predicate, DataContext? context = null);
+    Task<bool> Add(T item, DataContext? context = null);
+    Task<bool> AddRange(T item, DataContext? context = null);
+    Task<bool> Update(T item, DataContext? context = null);
+    Task<bool> Delete(T item, DataContext? context = null);
+    Task<bool> SaveChanges(DataContext? context = null);
 }
