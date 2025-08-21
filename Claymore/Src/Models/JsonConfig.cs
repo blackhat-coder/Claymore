@@ -16,6 +16,7 @@ public class JsonConfig
 public class Task
 {
     public string name { get; set; }
+    public int workers { get; set; }
     public string endpoint { get; set; }
     public int order { get; set; }
     public HttpConfigMethod method { get; set; }
