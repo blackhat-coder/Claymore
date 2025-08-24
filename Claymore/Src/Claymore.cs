@@ -21,7 +21,6 @@ namespace Claymore.Src;
 public class ClaymoreWorkers
 {
     private readonly HttpClient _httpClient;
-    private Stopwatch _stopWatch;
     private ILogger<ClaymoreWorkers> _logger;
     private readonly IGenericRepository<TaskResult> _taskRepository;
     private readonly DataContextFactory _dataContextFactory;
@@ -34,7 +33,6 @@ public class ClaymoreWorkers
     {
         _httpClient = httpClientFactory.CreateClient();
         _logger = logger;
-        _stopWatch = Stopwatch.StartNew();
         _dataGenerator = dataGenerator;
         _taskRepository = taskRepository;
         _dataContextFactory = dataContextFactory;
@@ -107,10 +105,9 @@ public class ClaymoreWorkers
             var resolver = new ClaymoreSyntaxResolver(_taskRepository, _dataGenerator);
             await _httpClient.AddRequestHeaders(resolver, task.headers);
 
-            _stopWatch.Start();
-
+            long startTime = Stopwatch.GetTimestamp();
             var response = await _httpClient.GetAsync(task.endpoint);
-            _stopWatch.Stop();
+            var delta = Stopwatch.GetElapsedTime(startTime);
 
             var respContent = await response.Content.ReadAsStringAsync();
 
@@ -123,7 +120,7 @@ public class ClaymoreWorkers
                 ResponseHeader = response.Headers.ToJsonString(),
                 ResponseBody = respContent,
                 Success = response.IsSuccessStatusCode,
-                ElapsedTime = _stopWatch.ElapsedMilliseconds
+                ElapsedTime = delta.Milliseconds
             }, dbContext);
             await _taskRepository.SaveChanges(dbContext);
         }
@@ -144,11 +141,9 @@ public class ClaymoreWorkers
 
         await _httpClient.AddRequestHeaders(resolver, task.headers);
 
-        _stopWatch.Start();
-
+        long startTime = Stopwatch.GetTimestamp();
         var response = await _httpClient.PostAsync(task.endpoint, content);
-
-        _stopWatch.Stop();
+        var delta = Stopwatch.GetElapsedTime(startTime);
 
         var respContent = await response.Content.ReadAsStringAsync();
 
@@ -161,7 +156,7 @@ public class ClaymoreWorkers
             ResponseHeader = response.Headers.ToJsonString(),
             ResponseBody = respContent,
             Success = response.IsSuccessStatusCode,
-            ElapsedTime = _stopWatch.ElapsedMilliseconds
+            ElapsedTime = delta.Milliseconds
         });
         await _taskRepository.SaveChanges();
     }
@@ -181,11 +176,9 @@ public class ClaymoreWorkers
 
         await _httpClient.AddRequestHeaders(resolver, task.headers);
 
-        _stopWatch.Start();
-
+        long startTIme = Stopwatch.GetTimestamp();
         var response = await _httpClient.PutAsync(task.endpoint, content);
-
-        _stopWatch.Stop();
+        var delta = Stopwatch.GetElapsedTime(startTIme);
 
         var respContent = await response.Content.ReadAsStringAsync();
 
@@ -198,7 +191,7 @@ public class ClaymoreWorkers
             ResponseHeader = response.Headers.ToJsonString(),
             ResponseBody = respContent,
             Success = response.IsSuccessStatusCode,
-            ElapsedTime = _stopWatch.ElapsedMilliseconds
+            ElapsedTime = delta.Milliseconds
         });
         await _taskRepository.SaveChanges();
     }
@@ -213,11 +206,9 @@ public class ClaymoreWorkers
         var resolver = new ClaymoreSyntaxResolver(_taskRepository, _dataGenerator);
         await _httpClient.AddRequestHeaders(resolver, task.headers);
 
-        _stopWatch.Start();
-
+        long startTime = Stopwatch.GetTimestamp();
         var response = await _httpClient.DeleteAsync(task.endpoint);
-
-        _stopWatch.Stop();
+        var delta = Stopwatch.GetElapsedTime(startTime);
 
         var respContent = await response.Content.ReadAsStringAsync();
 
@@ -230,7 +221,7 @@ public class ClaymoreWorkers
             ResponseHeader = response.Headers.ToJsonString(),
             ResponseBody = respContent,
             Success = response.IsSuccessStatusCode,
-            ElapsedTime = _stopWatch.ElapsedMilliseconds
+            ElapsedTime = delta.Milliseconds
         });
         await _taskRepository.SaveChanges();
     }
