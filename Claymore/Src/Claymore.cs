@@ -51,8 +51,7 @@ public class ClaymoreWorkers
             // Loop through the requests
             foreach(var task in tasks.OrderBy(x => x.order))
             {
-                if (task.method == HttpConfigMethod.GET)
-                {
+                if (task.method == HttpConfigMethod.GET) {
                     List<Task> allTasks = new();
 
                     for(int i=0; i<task.workers; i++) {
@@ -62,8 +61,7 @@ public class ClaymoreWorkers
                     await Task.WhenAll(allTasks);
                 }
                 
-                if (task.method == HttpConfigMethod.POST)
-                {
+                if (task.method == HttpConfigMethod.POST) {
                     List<Task> allTasks = new();
 
                     for(int i=0; i<task.workers; i++){
@@ -71,6 +69,23 @@ public class ClaymoreWorkers
                     }
 
                     await Task.WhenAll(allTasks);
+                }
+
+                if (task.method == HttpConfigMethod.PUT) {
+                    List<Task> allTasks = new();
+                    for(int i=0; i<task.workers; i++) {
+                        allTasks.Add(ExectutePut(task));
+                    }
+
+                    await Task.WhenAll(allTasks);
+                }
+
+                if (task.method == HttpConfigMethod.DELETE) {
+                    List<Task> allTasks = new();
+
+                    for(int i=0; i<task.workers; i++) {
+                        allTasks.Add(ExecuteDelete(task));
+                    }
                 }
             }
         }
@@ -132,6 +147,75 @@ public class ClaymoreWorkers
         _stopWatch.Start();
 
         var response = await _httpClient.PostAsync(task.endpoint, content);
+
+        _stopWatch.Stop();
+
+        var respContent = await response.Content.ReadAsStringAsync();
+
+        await _taskRepository.Add(new TaskResult
+        {
+            Id = Guid.NewGuid().ToString(),
+            WorkerId = workerId,
+            EndpointName = task.name,
+            Order = task.order,
+            ResponseHeader = response.Headers.ToJsonString(),
+            ResponseBody = respContent,
+            Success = response.IsSuccessStatusCode,
+            ElapsedTime = _stopWatch.ElapsedMilliseconds
+        });
+        await _taskRepository.SaveChanges();
+    }
+
+    private async Task ExectutePut(Models.Task task)
+    {
+        if (!(await ShouldProcessEndpoint(task)))
+            return;
+
+        var workerId = $"worker-{Interlocked.Increment(ref _workerCounter)}";
+
+        var resolver = new ClaymoreSyntaxResolver(_taskRepository, _dataGenerator);
+
+        string stringPayload = Convert.ToString(task.payload);
+        string payload = (await resolver.FindAndReplace(stringPayload)) ?? "";
+        StringContent content = new StringContent(payload, Encoding.UTF8, "application/json");
+
+        await _httpClient.AddRequestHeaders(resolver, task.headers);
+
+        _stopWatch.Start();
+
+        var response = await _httpClient.PutAsync(task.endpoint, content);
+
+        _stopWatch.Stop();
+
+        var respContent = await response.Content.ReadAsStringAsync();
+
+        await _taskRepository.Add(new TaskResult
+        {
+            Id = Guid.NewGuid().ToString(),
+            WorkerId = workerId,
+            EndpointName = task.name,
+            Order = task.order,
+            ResponseHeader = response.Headers.ToJsonString(),
+            ResponseBody = respContent,
+            Success = response.IsSuccessStatusCode,
+            ElapsedTime = _stopWatch.ElapsedMilliseconds
+        });
+        await _taskRepository.SaveChanges();
+    }
+
+    private async Task ExecuteDelete(Models.Task task)
+    {
+        if (!(await ShouldProcessEndpoint(task)))
+            return;
+
+        var workerId = $"worker-{Interlocked.Increment(ref _workerCounter)}";
+
+        var resolver = new ClaymoreSyntaxResolver(_taskRepository, _dataGenerator);
+        await _httpClient.AddRequestHeaders(resolver, task.headers);
+
+        _stopWatch.Start();
+
+        var response = await _httpClient.DeleteAsync(task.endpoint);
 
         _stopWatch.Stop();
 
