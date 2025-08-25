@@ -11,8 +11,18 @@ namespace Claymore.Src.Helpers;
 
 public class ClaymoreSyntaxResolver(IGenericRepository<TaskResult> _taskRepository, IDataGenerator _dataGenerator)
 {
+    private string? _workerId { get; set; }
 
     private readonly SyntaxValidator _syntaxValidator = new SyntaxValidator();
+
+    /// <summary>
+    /// Sets the worker Id for this instance
+    /// </summary>
+    /// <param name="workerId"></param>
+    public void SetWorkerId(string workerId)
+    {
+        _workerId = workerId;
+    }
 
     /// <summary>
     /// Takes the input string, checks for a valid syntax, and replaces the placeholder with
@@ -85,12 +95,11 @@ public class ClaymoreSyntaxResolver(IGenericRepository<TaskResult> _taskReposito
         {
             string name = parsedResponse?.name!;
             // Use the current thread Id to build the search name
-            string searchname = $"{Thread.CurrentThread.ManagedThreadId}_{parsedResponse?.name}";
 
             // Handle ResponseBody replacement
             if (parsedResponse?.part == ClaymoreConstants.ResponseBody)
             {
-                string? storedResponse = (await _taskRepository.GetFirstOrDefault(x => x.EndpointName == name))?.ResponseBody;
+                string? storedResponse = (await _taskRepository.GetFirstOrDefault(x => x.EndpointName == name && x.WorkerId == _workerId))?.ResponseBody;
                 // parse the body and get the preperty parsedResponse.property
                 if (storedResponse != null && parsedResponse?.property != null)
                 {
@@ -108,7 +117,7 @@ public class ClaymoreSyntaxResolver(IGenericRepository<TaskResult> _taskReposito
             // Handle ResponseHeader replacement
             if (parsedResponse?.part == ClaymoreConstants.ResponseHeader)
             {
-                string? headerResponse = (await _taskRepository.GetFirstOrDefault(x => x.EndpointName == name))?.ResponseHeader;
+                string? headerResponse = (await _taskRepository.GetFirstOrDefault(x => x.EndpointName == name && x.WorkerId == _workerId))?.ResponseHeader;
 
                 if (headerResponse != null && parsedResponse?.property != null)
                 {

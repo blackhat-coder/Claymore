@@ -85,6 +85,8 @@ public class ClaymoreWorkers
                         allTasks.Add(ExecuteDelete(task));
                     }
                 }
+
+                _workerCounter = 0;
             }
         }
         catch (Exception ex)
@@ -103,6 +105,7 @@ public class ClaymoreWorkers
                 return;
 
             var resolver = new ClaymoreSyntaxResolver(_taskRepository, _dataGenerator);
+            resolver.SetWorkerId(workerId);
             await _httpClient.AddRequestHeaders(resolver, task.headers);
 
             long startTime = Stopwatch.GetTimestamp();
@@ -134,6 +137,7 @@ public class ClaymoreWorkers
         var workerId = $"worker-{Interlocked.Increment(ref _workerCounter)}";
 
         var resolver = new ClaymoreSyntaxResolver(_taskRepository, _dataGenerator);
+        resolver.SetWorkerId(workerId);
 
         string stringPayload = Convert.ToString(task.payload);
         string payload = (await resolver.FindAndReplace(stringPayload)) ?? "";
@@ -169,6 +173,7 @@ public class ClaymoreWorkers
         var workerId = $"worker-{Interlocked.Increment(ref _workerCounter)}";
 
         var resolver = new ClaymoreSyntaxResolver(_taskRepository, _dataGenerator);
+        resolver.SetWorkerId(workerId);
 
         string stringPayload = Convert.ToString(task.payload);
         string payload = (await resolver.FindAndReplace(stringPayload)) ?? "";
@@ -204,6 +209,7 @@ public class ClaymoreWorkers
         var workerId = $"worker-{Interlocked.Increment(ref _workerCounter)}";
 
         var resolver = new ClaymoreSyntaxResolver(_taskRepository, _dataGenerator);
+        resolver.SetWorkerId(workerId);
         await _httpClient.AddRequestHeaders(resolver, task.headers);
 
         long startTime = Stopwatch.GetTimestamp();
