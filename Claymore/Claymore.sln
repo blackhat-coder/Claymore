@@ -3,7 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.10.34928.147
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Claymore", "Claymore.csproj", "{5A43242D-3B55-4B95-B9EE-9D79240557E1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Claymore", "Claymore.csproj", "{5A43242D-3B55-4B95-B9EE-9D79240557E1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Claymore.Tests", "..\Claymore.Tests\Claymore.Tests.csproj", "{393EB187-CC42-41BB-AFA2-BF82D61EEE7B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{5A43242D-3B55-4B95-B9EE-9D79240557E1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5A43242D-3B55-4B95-B9EE-9D79240557E1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5A43242D-3B55-4B95-B9EE-9D79240557E1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{393EB187-CC42-41BB-AFA2-BF82D61EEE7B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{393EB187-CC42-41BB-AFA2-BF82D61EEE7B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{393EB187-CC42-41BB-AFA2-BF82D61EEE7B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{393EB187-CC42-41BB-AFA2-BF82D61EEE7B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
