@@ -35,7 +35,7 @@ public static class RegexPatterns
     /// <summary>
     /// Matches a name token placeholder: $name
     /// </summary>
-    private static readonly Regex _nameTokenPattern = new Regex(@"(?<token>\$name)", RegexOptions.Compiled);
+    private static readonly Regex _nameTokenPattern = new Regex(@"(?<token>(?<=^|\s)\$name(?=\s|$))", RegexOptions.Compiled);
     public static Regex NameTokenPattern {  get { return _nameTokenPattern; } }
 
     /// <summary>
