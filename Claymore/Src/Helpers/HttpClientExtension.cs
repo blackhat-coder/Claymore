@@ -10,12 +10,12 @@ namespace Claymore.Src.Helpers;
 
 public static class HttpClientExtension
 {
-    public async static Task<HttpClient> AddRequestHeaders(this HttpClient client, ClaymoreSyntaxResolver resolver, List<Header> headers) {
+    public async static Task<HttpClient> AddRequestHeaders(this HttpClient client, ClaymoreSyntaxResolver resolver, Dictionary<string, string> headers) {
 
         foreach (var header in headers)
         {
-            var headerValue = await resolver.FindAndReplace(header.value);
-            client.DefaultRequestHeaders.Add(header.key, headerValue ?? "");
+            var headerValue = await resolver.FindAndReplace(header.Value);
+            client.DefaultRequestHeaders.Add(header.Key, headerValue ?? "");
         }
 
         return client;

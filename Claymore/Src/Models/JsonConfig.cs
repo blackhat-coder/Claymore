@@ -20,7 +20,7 @@ public class Task
     public string endpoint { get; set; }
     public int order { get; set; }
     public HttpConfigMethod method { get; set; }
-    public List<Header> headers { get; set; }
+    public Dictionary<string, string> headers { get; set; }
     public dynamic payload { get; set; }
     public List<DependsOn> dependsOn { get; set; }
 }
