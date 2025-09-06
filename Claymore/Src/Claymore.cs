@@ -101,15 +101,17 @@ public class ClaymoreWorkers
         {
             var workerId = $"worker-{Interlocked.Increment(ref _workerCounter)}";
 
-            if (!(await ShouldProcessEndpoint(task)))
+            if (!(await ShouldProcessEndpoint(task, workerId)))
                 return;
 
             var resolver = new ClaymoreSyntaxResolver(_taskRepository, _dataGenerator);
             resolver.SetWorkerId(workerId);
             await _httpClient.AddRequestHeaders(resolver, task.headers);
 
+            var endpoint = await resolver.FindAndReplace(task.endpoint);
+
             long startTime = Stopwatch.GetTimestamp();
-            var response = await _httpClient.GetAsync(task.endpoint);
+            var response = await _httpClient.GetAsync(endpoint);
             var delta = Stopwatch.GetElapsedTime(startTime);
 
             var respContent = await response.Content.ReadAsStringAsync();
@@ -131,10 +133,10 @@ public class ClaymoreWorkers
 
     private async Task ExecutePost(Models.Task task)
     {
-        if (!(await ShouldProcessEndpoint(task)))
-            return;
-
         var workerId = $"worker-{Interlocked.Increment(ref _workerCounter)}";
+
+        if (!(await ShouldProcessEndpoint(task, workerId)))
+            return;
 
         var resolver = new ClaymoreSyntaxResolver(_taskRepository, _dataGenerator);
         resolver.SetWorkerId(workerId);
@@ -145,8 +147,10 @@ public class ClaymoreWorkers
 
         await _httpClient.AddRequestHeaders(resolver, task.headers);
 
+        var endpoint = await resolver.FindAndReplace(task.endpoint);
+
         long startTime = Stopwatch.GetTimestamp();
-        var response = await _httpClient.PostAsync(task.endpoint, content);
+        var response = await _httpClient.PostAsync(endpoint, content);
         var delta = Stopwatch.GetElapsedTime(startTime);
 
         var respContent = await response.Content.ReadAsStringAsync();
@@ -167,10 +171,10 @@ public class ClaymoreWorkers
 
     private async Task ExectutePut(Models.Task task)
     {
-        if (!(await ShouldProcessEndpoint(task)))
-            return;
-
         var workerId = $"worker-{Interlocked.Increment(ref _workerCounter)}";
+
+        if (!(await ShouldProcessEndpoint(task, workerId)))
+            return;
 
         var resolver = new ClaymoreSyntaxResolver(_taskRepository, _dataGenerator);
         resolver.SetWorkerId(workerId);
@@ -181,8 +185,10 @@ public class ClaymoreWorkers
 
         await _httpClient.AddRequestHeaders(resolver, task.headers);
 
+        var endpoint = await resolver.FindAndReplace(task.endpoint);
+
         long startTIme = Stopwatch.GetTimestamp();
-        var response = await _httpClient.PutAsync(task.endpoint, content);
+        var response = await _httpClient.PutAsync(endpoint, content);
         var delta = Stopwatch.GetElapsedTime(startTIme);
 
         var respContent = await response.Content.ReadAsStringAsync();
@@ -203,17 +209,19 @@ public class ClaymoreWorkers
 
     private async Task ExecuteDelete(Models.Task task)
     {
-        if (!(await ShouldProcessEndpoint(task)))
-            return;
-
         var workerId = $"worker-{Interlocked.Increment(ref _workerCounter)}";
+
+        if (!(await ShouldProcessEndpoint(task, workerId)))
+            return;
 
         var resolver = new ClaymoreSyntaxResolver(_taskRepository, _dataGenerator);
         resolver.SetWorkerId(workerId);
         await _httpClient.AddRequestHeaders(resolver, task.headers);
 
+        var endpoint = await resolver.FindAndReplace(task.endpoint);
+
         long startTime = Stopwatch.GetTimestamp();
-        var response = await _httpClient.DeleteAsync(task.endpoint);
+        var response = await _httpClient.DeleteAsync(endpoint);
         var delta = Stopwatch.GetElapsedTime(startTime);
 
         var respContent = await response.Content.ReadAsStringAsync();
@@ -237,7 +245,7 @@ public class ClaymoreWorkers
     /// Takes TaskInfo
     /// </summary>
     /// <returns></returns>
-    private async Task<bool> ShouldProcessEndpoint(Models.Task task)
+    private async Task<bool> ShouldProcessEndpoint(Models.Task task, string workerId)
     {
         var response = new List<bool>();
 
@@ -246,7 +254,7 @@ public class ClaymoreWorkers
         foreach(var x in dependsOn)
         {
             bool successCondition = x.condition == ClaymoreConstants.Success ? true : false;
-            var success = (await _taskRepository.GetFirstOrDefault(task => task.WorkerId == "" && task.EndpointName == x.name))?.Success;
+            var success = (await _taskRepository.GetFirstOrDefault(task => task.WorkerId == workerId && task.EndpointName == x.name))?.Success;
             var sRun = success == successCondition;
             if (!sRun)
                 response.Add(false);
