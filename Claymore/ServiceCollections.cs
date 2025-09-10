@@ -21,12 +21,13 @@ public static class ServiceCollections
     public static IServiceCollection AddAppServices(this IServiceCollection services)
     {
         services.AddPooledDbContextFactory<DataContext>(
-            options => options.UseSqlite("Data Source=\\Claymore.db"));
+            options => options.UseSqlite("Data Source=Claymore.db"));
         services.AddScoped<DataContextFactory>();
 
         services.AddLogging(builder => {
             builder.AddConsole();
             builder.AddFilter("Microsoft.EntityFrameworkCore.Database.Command", LogLevel.None);
+            builder.AddFilter("Microsoft.EntityFrameworkCore.Migrations", LogLevel.None);
             });
 
         services.AddHttpClient();

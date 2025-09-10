@@ -2,6 +2,8 @@
 using Claymore;
 using Claymore.Src;
 using Claymore.Src.Models;
+using Claymore.Src.Persistence;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Spectre.Console;
@@ -37,6 +39,21 @@ AnsiConsole.Status()
     Thread.Sleep(1000);
     var config = ConfigurationReader.Read();
 });
+
+// DB Migrations
+using(var scope = services.BuildServiceProvider().CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<DataContextFactory>();
+
+    var dbContext = db.CreateDbContext();
+    await dbContext.Database.MigrateAsync();
+
+    // Clean database for fresh runs
+    if (dbContext.Tasks.Any())
+    {
+        dbContext.Tasks.ExecuteDelete();
+    }
+}
 
 Dictionary<string, List<TaskStatistic>>? resultStatistics = null;
 
