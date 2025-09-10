@@ -14,4 +14,5 @@ public static class ClaymoreConstants
     public const string length = "length";
     public const string Success = "success";
     public const string Error = "error";
+    public const string Failure = "failure";
 }

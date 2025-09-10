@@ -1,6 +1,7 @@
 ﻿using Claymore.Src.Helpers;
 using Claymore.Src.Models;
 using Microsoft.Extensions.Logging;
+using Spectre.Console;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -51,13 +52,15 @@ public static class ConfigurationReader
         set { _configFile = value; } 
     }
 
+    private static StatusContext _ctx { get; set; }
+
     /// <summary>
     /// Call this static method on ConfigurationReader and pass options [ConfigurationReaderOptions] to initialize ConfigurationReader
     /// ConfigurationReaderOptions contains a file and a logger.
     /// After the configFile is read, _initialized is set to True
     /// </summary>
     /// <param name="options"></param>
-    public static void Init(Action<ConfigurationReaderOptions> options)
+    public static void Init(Action<ConfigurationReaderOptions> options, StatusContext ctx)
     {
         var readerOptions = new ConfigurationReaderOptions();
         options(readerOptions);
@@ -66,6 +69,7 @@ public static class ConfigurationReader
         _logger = readerOptions.logger;
 
         _initialized = true;
+        _ctx = ctx;
     }
 
     /// <summary>
@@ -98,16 +102,24 @@ public static class ConfigurationReader
                 _config = config;
             }
 
+            AnsiConsole.MarkupLine("LOG: Read config file [bold green]success[/]...");
+
+            _ctx.Status("[bold khaki3]Validating...[/]");
+            _ctx.Spinner(Spinner.Known.SimpleDotsScrolling);
+            AnsiConsole.MarkupLine("LOG: Validating config file...");
+
             // Performs validation on the configuration
+            Thread.Sleep(1000);
             ValidateConfig();
 
-            _logger?.LogInformation("Successfully read Config File");
+            _ctx.Status("[bold green]Done![/]");
+            AnsiConsole.MarkupLine("LOG: Validation [bold green]success![/]");
             return config;
         }
         catch (Exception ex)
         {
-            _logger?.LogError(ex, "Error while reading the configuration file.");
-            throw new Exception("Exception while reading configuration file", ex);
+            AnsiConsole.WriteException(ex);
+            return null;
         }
     }
 

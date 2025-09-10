@@ -4,6 +4,8 @@ using Claymore.Src.Persistence.Repository;
 using Claymore.Src.Services.TextGeneration;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Http;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -19,11 +21,16 @@ public static class ServiceCollections
     public static IServiceCollection AddAppServices(this IServiceCollection services)
     {
         services.AddPooledDbContextFactory<DataContext>(
-            options => options.UseSqlite("Data Source=C:\\Users\\aboh.israel\\OneDrive\\Documents\\Codes\\Claymore\\db\\Claymore.db"));
+            options => options.UseSqlite("Data Source=\\Claymore.db"));
         services.AddScoped<DataContextFactory>();
 
-        services.AddLogging(builder => builder.AddConsole());
+        services.AddLogging(builder => {
+            builder.AddConsole();
+            builder.AddFilter("Microsoft.EntityFrameworkCore.Database.Command", LogLevel.None);
+            });
+
         services.AddHttpClient();
+        services.RemoveAll<IHttpMessageHandlerBuilderFilter>();
 
         services.AddScoped<IDataGenerator, DataGenerator>();
         services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
