@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Spectre.Console;
+using Spectre.Console.Cli;
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
 using System.IO.Enumeration;
@@ -23,7 +24,7 @@ var serviceProvider = services.BuildServiceProvider();
 
 var httpClient = new HttpClient();
 
-var filename = AnsiConsole.Prompt(new TextPrompt<string>("Please enter configuration filepath [bold green](.json)[/]: "));
+var filename = args.Length > 0 ? args[0] : AnsiConsole.Prompt(new TextPrompt<string>("Please enter configuration filepath [bold green](.json)[/]: "));
 
 var logger = serviceProvider.GetRequiredService<ILogger<Program>>();
 var workers = serviceProvider.GetRequiredService<ClaymoreWorkers>();
