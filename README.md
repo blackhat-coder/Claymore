@@ -1,4 +1,6 @@
-# Claymore
+![Screenshot](/Screenshot.png)
+
+<center><h1>Claymore</h1></center>
 
 Claymore is an open-source **load testing tool** designed to simulate millions of users interacting with your system.  
 By defining **user behavior** in a simple JSON format, you can swarm your APIs with realistic, concurrent traffic.
