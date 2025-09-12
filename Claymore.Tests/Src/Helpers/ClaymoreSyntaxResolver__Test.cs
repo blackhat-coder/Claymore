@@ -4,10 +4,64 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Claymore.Src.Helpers;
+using Claymore.Src.Models;
+using Claymore.Src.Persistence;
+using Claymore.Src.Persistence.Repository;
 using Claymore.Src.Services.TextGeneration;
+using Moq;
 
 namespace Claymore.Tests.Src.Helpers
 {
+    [TestClass]
+    public class ClaymoreSyntaxResolver_Test
+    {
+        [TestInitialize]
+        public void Setup()
+        {
+        }
+
+        [TestMethod]
+        public void FindAndReplace_WithValidString_ReturnsResolvedString()
+        {
+            string input = "{\n  \"email\":\" $email \",\n  \"number\":\"$number[9]\",\n  \"string\":\"$string[5]\",\n  \"name\":\" $name \"\n}";
+
+            var repositoryMock = new Mock<IGenericRepository<TaskResult>>();
+            var dataGeneratorMock = new Mock<IDataGenerator>();
+
+            dataGeneratorMock.Setup(dataGenerator => dataGenerator.GenerateEmail().Result).Returns("johndoe@gmail.com");
+            dataGeneratorMock.Setup(dataGenerator => dataGenerator.GenerateNumber(9).Result).Returns(123456789);
+            dataGeneratorMock.Setup(dataGenerator => dataGenerator.GenerateString(5).Result).Returns("abcde");
+            dataGeneratorMock.Setup(dataGenerator => dataGenerator.GenerateName().Result).Returns("John Doe");
+
+            var syntaxResolver = new ClaymoreSyntaxResolver(repositoryMock.Object, dataGeneratorMock.Object);
+
+            // Act
+            var result = syntaxResolver.FindAndReplace(input).Result;
+
+            // Assert
+            Assert.IsNotNull(result);
+            Assert.AreEqual("{\n  \"email\":\" johndoe@gmail.com \",\n  \"number\":\"123456789\",\n  \"string\":\"abcde\",\n  \"name\":\" John Doe \"\n}", result);
+        }
+
+        [TestMethod]
+        public void FindAndReplace_WithValidStringContainsBoolean_ReturnsResolvedString()
+        {
+            string input = "{\n  \"verifyEmail\":\"$bool\",\n}";
+
+            var repositoryMock = new Mock<IGenericRepository<TaskResult>>();
+            var dataGeneratorMock = new Mock<IDataGenerator>();
+            
+            var syntaxResolver = new ClaymoreSyntaxResolver(repositoryMock.Object, dataGeneratorMock.Object);
+
+            // Act
+            var result = syntaxResolver.FindAndReplace(input).Result;
+
+            // Assert
+            Assert.IsNotNull(result);
+            Assert.IsTrue(result == "{\n  \"verifyEmail\":\"True\",\n}" || result == "{\n  \"verifyEmail\":\"False\",\n}");
+        }
+    }
+
     [TestClass]
     public class SyntaxValidator_Test
     {
