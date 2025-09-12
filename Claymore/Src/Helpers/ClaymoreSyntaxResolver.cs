@@ -67,6 +67,9 @@ public class ClaymoreSyntaxResolver(IGenericRepository<TaskResult> _taskReposito
                 else if (pattern == RegexPatterns.EmailTokenPattern)
                 {
                     replacement = await ResolveEmailToken(token);
+                }else if (pattern == RegexPatterns.BooleanTokenPattern)
+                {
+                    replacement = await ResolveBooleanToken(token);
                 }
 
                 if (replacement != null)
@@ -139,12 +142,13 @@ public class ClaymoreSyntaxResolver(IGenericRepository<TaskResult> _taskReposito
     /// <summary>
     /// Resolves and replaces boolean tokens in the input string.
     /// </summary>
-    private async Task<bool?> ResolveBooleanToken(string input)
+    private async Task<string?> ResolveBooleanToken(string input)
     {
         var parsedResponse = _syntaxValidator.ParseBooleanToken(input);
         if(parsedResponse == null) { return null; }
 
-        return new Random().Next(2) == 0;
+        var boolean = (new Random().Next(2) == 0).ToString();
+        return Regex.Replace(input, RegexPatterns.BooleanTokenPattern.ToString(), boolean);
     }
 
     /// <summary>
