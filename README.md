@@ -22,7 +22,7 @@ By defining **user behavior** in a simple JSON format, you can swarm your APIs w
 ### Installation and Quick Start
 
 1.  **Download and Extract:**
-    Download the latest release of Claymore from the [releases page]((https://github.com/blackhat-coder/Claymore/releases) and extract the contents to a folder of your choice.
+    Download the latest release of Claymore from the [releases page](https://github.com/blackhat-coder/Claymore/releases) and extract the contents to a folder of your choice.
 
 2.  **Run the Program:**
     Open your command prompt or terminal, navigate to the folder where you extracted the files, and run the program using one of the following methods:
