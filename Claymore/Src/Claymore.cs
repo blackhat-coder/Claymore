@@ -22,7 +22,6 @@ namespace Claymore.Src;
 
 public class ClaymoreWorkers
 {
-    private readonly HttpClient _httpClient;
     private ILogger<ClaymoreWorkers> _logger;
     private readonly IGenericRepository<TaskResult> _taskRepository;
     private readonly DataContextFactory _dataContextFactory;
@@ -31,11 +30,12 @@ public class ClaymoreWorkers
     private static int _workerCounter = 0;
 
     private object _progressLockObj = new object();
+    private IHttpClientFactory _httpClientFactory;
 
     public ClaymoreWorkers(ILogger<ClaymoreWorkers> logger, IHttpClientFactory httpClientFactory, IGenericRepository<TaskResult> taskRepository
         , IDataGenerator dataGenerator, DataContextFactory dataContextFactory)
     {
-        _httpClient = httpClientFactory.CreateClient();
+        _httpClientFactory = httpClientFactory;
         _logger = logger;
         _dataGenerator = dataGenerator;
         _taskRepository = taskRepository;
@@ -116,12 +116,15 @@ public class ClaymoreWorkers
 
             var resolver = new ClaymoreSyntaxResolver(_taskRepository, _dataGenerator);
             resolver.SetWorkerId(workerId);
-            await _httpClient.AddRequestHeaders(resolver, task.headers);
+
+            var httpClient = _httpClientFactory.CreateClient();
+
+            await httpClient.AddRequestHeaders(resolver, task.headers);
 
             var endpoint = await resolver.FindAndReplace(task.endpoint);
 
             long startTime = Stopwatch.GetTimestamp();
-            var response = await _httpClient.GetAsync(endpoint);
+            var response = await httpClient.GetAsync(endpoint);
             var delta = Stopwatch.GetElapsedTime(startTime);
 
             var respContent = await response.Content.ReadAsStringAsync();
@@ -163,12 +166,14 @@ public class ClaymoreWorkers
             string payload = (await resolver.FindAndReplace(stringPayload)) ?? "";
             StringContent content = new StringContent(payload, Encoding.UTF8, "application/json");
 
-            await _httpClient.AddRequestHeaders(resolver, task.headers);
+            var httpClient = _httpClientFactory.CreateClient();
+
+            await httpClient.AddRequestHeaders(resolver, task.headers);
 
             var endpoint = await resolver.FindAndReplace(task.endpoint);
 
             long startTime = Stopwatch.GetTimestamp();
-            var response = await _httpClient.PostAsync(endpoint, content);
+            var response = await httpClient.PostAsync(endpoint, content);
             var delta = Stopwatch.GetElapsedTime(startTime);
 
             var respContent = await response.Content.ReadAsStringAsync();
@@ -209,12 +214,14 @@ public class ClaymoreWorkers
             string payload = (await resolver.FindAndReplace(stringPayload)) ?? "";
             StringContent content = new StringContent(payload, Encoding.UTF8, "application/json");
 
-            await _httpClient.AddRequestHeaders(resolver, task.headers);
+            var httpClient = _httpClientFactory.CreateClient();
+
+            await httpClient.AddRequestHeaders(resolver, task.headers);
 
             var endpoint = await resolver.FindAndReplace(task.endpoint);
 
             long startTIme = Stopwatch.GetTimestamp();
-            var response = await _httpClient.PutAsync(endpoint, content);
+            var response = await httpClient.PutAsync(endpoint, content);
             var delta = Stopwatch.GetElapsedTime(startTIme);
 
             var respContent = await response.Content.ReadAsStringAsync();
@@ -250,12 +257,14 @@ public class ClaymoreWorkers
 
             var resolver = new ClaymoreSyntaxResolver(_taskRepository, _dataGenerator);
             resolver.SetWorkerId(workerId);
-            await _httpClient.AddRequestHeaders(resolver, task.headers);
+
+            var httpClient = _httpClientFactory.CreateClient();
+            await httpClient.AddRequestHeaders(resolver, task.headers);
 
             var endpoint = await resolver.FindAndReplace(task.endpoint);
 
             long startTime = Stopwatch.GetTimestamp();
-            var response = await _httpClient.DeleteAsync(endpoint);
+            var response = await httpClient.DeleteAsync(endpoint);
             var delta = Stopwatch.GetElapsedTime(startTime);
 
             var respContent = await response.Content.ReadAsStringAsync();
